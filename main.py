@@ -1,3 +1,4 @@
+#%%
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -26,7 +27,7 @@ driver = webdriver.Chrome(service=sService, options=chrome_options)
 
 # Navigate to the olx.pl page
 driver.get("https://www.olx.pl/d/mojolx/")
-
+#%%
 # Find the login button and click it
 # click_element_by_xpath(driver, '//*[@id="onetrust-accept-btn-handler"]')
 # click_element_by_link_text(driver, 'Twoje konto')
@@ -47,12 +48,18 @@ time.sleep(3)
 driver.get("https://www.olx.pl/d/mojolx/finished")  # Directly go to a logged-in page after adding cookies
 time.sleep(3)
 
+# Get list of offers and save them to list 
 adList = get_marketplace_offer_list(driver)
 
 navigate_to_offer_edit(driver, adList[0].ID)
+
 get_offer_description(driver, adList[0])
+
 append_to_offer_description(driver, adList[0], " - Jestem na urlopie w związku z czym cena podniesiona o 50zł za fatyge i dodatkowe koszty związane z wysyłką. Pozdrawiam")
+
 change_offer_price(driver, adList[0], int(adList[0].price) + 50)
+
+click_element_by_test_id(driver, 'submit-btn')
 
 time.sleep(3)
 
