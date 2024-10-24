@@ -145,3 +145,26 @@ def change_offer_price(driver, offer, new_price):
         offer.price = new_price
     except NoSuchElementException:
         print("Price element not found.")
+
+def remove_holiday_description(driver, offer, holiday_description):
+    try:
+        wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
+        description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
+        current_description = description_element.text
+        new_description = current_description.replace(holiday_description, "").strip()
+        description_element.clear()
+        description_element.send_keys(new_description)
+        offer.description = new_description
+    except NoSuchElementException:
+        print("Description element not found.")
+
+def revert_offer_price(driver, offer, original_price):
+    try:
+        wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-price"]')
+        price_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-price"]')
+        price_element.send_keys(Keys.CONTROL + "a")
+        price_element.send_keys(Keys.DELETE)
+        price_element.send_keys(original_price)
+        offer.price = original_price
+    except NoSuchElementException:
+        print("Price element not found.")
