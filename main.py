@@ -5,11 +5,13 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import Remote
 from methods import *
 import config
 import pickle
 import time
 import adModel
+from concurrent.futures import ThreadPoolExecutor
 
 # Set the path to your Chrome driver executable
 driver_path = "C:\\webdrivers\\chromedriver-win64\\chromedriver.exe"
@@ -17,9 +19,41 @@ driver_path = "C:\\webdrivers\\chromedriver-win64\\chromedriver.exe"
 # Set the path to your Chrome user data directory
 user_data_dir = "C:\\path\\to\\your\\chrome\\user\\data"
 
+# Selenium Grid URL
+grid_url = "http://localhost:4444/wd/hub"
+
 # Create Chrome options to use the specified profile
 chrome_options = Options()
 chrome_options.add_argument(f"user-data-dir={user_data_dir}")
+
+# Function to create a new WebDriver instance
+def create_driver():
+    return Remote(command_executor=grid_url, options=chrome_options)
+
+# Create multiple WebDriver instances for parallel execution
+num_drivers = 3
+drivers = [create_driver() for _ in range(num_drivers)]
+
+# Function to edit offers using a WebDriver instance
+def edit_offers(driver, offers):
+    for offer in offers:
+        navigate_to_offer_edit(driver, offer.ID)
+        if validate_is_holiday_description(driver, offer, holiday_description):
+            remove_holiday_description(driver, offer, holiday_description)
+            revert_offer_price(driver, offer, int(offer.price) - price_increase)
+        else:
+            append_to_offer_description(driver, offer, holiday_description)
+            change_offer_price(driver, offer, int(offer.price) + price_increase)
+        click_element_by_test_id(driver, 'submit-btn')
+        time.sleep(3)
+
+# Distribute offer editing tasks across multiple WebDriver instances
+def distribute_offers(drivers, offers):
+    chunk_size = len(offers) // len(drivers)
+    chunks = [offers[i:i + chunk_size] for i in range(0, len(offers), chunk_size)]
+    with ThreadPoolExecutor(max_workers=len(drivers)) as executor:
+        for driver, chunk in zip(drivers, chunks):
+            executor.submit(edit_offers, driver, chunk)
 
 # Create a new instance of the Chrome driver with the specified options
 sService = ChromeService(driver_path)
@@ -54,16 +88,9 @@ adList = get_marketplace_offer_list(driver)
 holiday_description = " - Jestem na urlopie w związku z czym cena podniesiona o 50zł za fatyge i dodatkowe koszty związane z wysyłką. Pozdrawiam"
 price_increase = 50
 
-for offer in adList:
-    navigate_to_offer_edit(driver, offer.ID)
-    if validate_is_holiday_description(driver, offer, holiday_description):
-        remove_holiday_description(driver, offer, holiday_description)
-        revert_offer_price(driver, offer, int(offer.price) - price_increase)
-    else:
-        append_to_offer_description(driver, offer, holiday_description)
-        change_offer_price(driver, offer, int(offer.price) + price_increase)
-    click_element_by_test_id(driver, 'submit-btn')
-    time.sleep(3)
+# Distribute offers across multiple drivers
+distribute_offers(drivers, adList)
 
-# Close the browser
-driver.quit()
+# Close all browsers
+for driver in drivers:
+    driver.quit()
