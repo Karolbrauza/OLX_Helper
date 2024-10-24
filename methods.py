@@ -7,6 +7,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from adModel import MarketplaceOffer
 import threading
+import logging
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 lock = threading.Lock()
 
@@ -15,7 +17,7 @@ def wait_for_element(driver, by, value, timeout=10):
         element_present = EC.presence_of_element_located((by, value))
         WebDriverWait(driver, timeout).until(element_present)
     except TimeoutException:
-        print(f"Timed out waiting for element: {value}")
+        logging.error(f"Timed out waiting for element: {value}")
 
 def click_element_by_link_text(driver, link_text):
     try:
@@ -23,23 +25,20 @@ def click_element_by_link_text(driver, link_text):
         element = driver.find_element(By.PARTIAL_LINK_TEXT, link_text)
         element.click()
     except NoSuchElementException:
-        print(f"Element with link text '{link_text}' not found.")
+        logging.error(f"Element with link text '{link_text}' not found.")
         
 def click_element_by_text(driver, text):
     try:
-        # Find all elements on the page
         elements = driver.find_elements_by_xpath(f"//*[contains(text(), '{text}')]")
-        
-        # Iterate through the elements and click the first one containing the text
         if elements:
             elements[0].click()
-            print(f"Clicked element containing text: {text}")
+            logging.info(f"Clicked element containing text: {text}")
             return True
         else:
-            print(f"No element found containing the text: {text}")
+            logging.error(f"No element found containing the text: {text}")
             return False
     except NoSuchElementException as e:
-        print(f"Element not found: {e}")
+        logging.error(f"Element not found: {e}")
         return False
 
 def click_element_by_id(driver, element_id):
@@ -48,7 +47,7 @@ def click_element_by_id(driver, element_id):
         element = driver.find_element(By.ID, element_id)
         element.click()
     except NoSuchElementException:
-        print(f"Element with ID '{element_id}' not found.")
+        logging.error(f"Element with ID '{element_id}' not found.")
 
 def click_element_by_xpath(driver, xpath):
     try:
@@ -56,7 +55,7 @@ def click_element_by_xpath(driver, xpath):
         element = driver.find_element(By.XPATH, xpath)
         element.click()
     except NoSuchElementException:
-        print(f"Element with XPath '{xpath}' not found.")
+        logging.error(f"Element with XPath '{xpath}' not found.")
 
 def send_keys_to_element_by_id(driver, element_id, keys):
     try:
@@ -64,7 +63,7 @@ def send_keys_to_element_by_id(driver, element_id, keys):
         element = driver.find_element(By.ID, element_id)
         element.send_keys(keys)
     except NoSuchElementException:
-        print(f"Element with ID '{element_id}' not found.")
+        logging.error(f"Element with ID '{element_id}' not found.")
 
 def click_element_by_test_id(driver, test_id):
     try:
@@ -72,7 +71,7 @@ def click_element_by_test_id(driver, test_id):
         element = driver.find_element(By.CSS_SELECTOR, f'[data-testid="{test_id}"]')
         element.click()
     except NoSuchElementException:
-        print(f"Element with data-testid '{test_id}' not found.")
+        logging.error(f"Element with data-testid '{test_id}' not found.")
 
 def get_ad_list(driver):
     try:
@@ -80,9 +79,9 @@ def get_ad_list(driver):
         elements = driver.find_elements(By.CSS_SELECTOR, f'[data-testid="ad-row"]')
         return elements
     except NoSuchElementException:
-        print(f"Elements with data-testid ad-row not found.")
+        logging.error(f"Elements with data-testid ad-row not found.")
         return []
-    
+
 def get_marketplace_offer_list(driver):
     ad_elements = get_ad_list(driver)
     offers = []
@@ -102,9 +101,10 @@ def get_marketplace_offer_list(driver):
             offer = MarketplaceOffer(ID=ad_id, name=ad_name, price=ad_price)
             offers.append(offer)
         except NoSuchElementException:
-            print("Ad ID, name, or price element not found in one of the ad elements.")
+            logging.error("Ad ID, name, or price element not found in one of the ad elements.")
     return offers
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def navigate_to_offer_edit(driver, offer_id):
     with lock:
         edit_url = f"https://www.olx.pl/d/adding/edit/{offer_id}/?bs=olx_pro_listing"
@@ -118,7 +118,7 @@ def get_offer_description(driver, offer):
             offer.description = description_element.text
             return offer.description
         except NoSuchElementException:
-            print("Description element not found.")
+            logging.error("Description element not found.")
 
 def validate_is_holiday_description(driver, offer, holiday_description):
     with lock:
@@ -140,7 +140,7 @@ def append_to_offer_description(driver, offer, additional_text):
             description_element.send_keys(new_description)
             offer.description = new_description
         except NoSuchElementException:
-            print("Description element not found.")
+            logging.error("Description element not found.")
 
 def change_offer_price(driver, offer, new_price):
     with lock:
@@ -152,7 +152,7 @@ def change_offer_price(driver, offer, new_price):
             price_element.send_keys(new_price)
             offer.price = new_price
         except NoSuchElementException:
-            print("Price element not found.")
+            logging.error("Price element not found.")
 
 def remove_holiday_description(driver, offer, holiday_description):
     with lock:
@@ -165,7 +165,7 @@ def remove_holiday_description(driver, offer, holiday_description):
             description_element.send_keys(new_description)
             offer.description = new_description
         except NoSuchElementException:
-            print("Description element not found.")
+            logging.error("Description element not found.")
 
 def revert_offer_price(driver, offer, original_price):
     with lock:
@@ -177,4 +177,4 @@ def revert_offer_price(driver, offer, original_price):
             price_element.send_keys(original_price)
             offer.price = original_price
         except NoSuchElementException:
-            print("Price element not found.")
+            logging.error("Price element not found.")
