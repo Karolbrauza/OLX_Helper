@@ -51,18 +51,19 @@ time.sleep(3)
 # Get list of offers and save them to list 
 adList = get_marketplace_offer_list(driver)
 
-navigate_to_offer_edit(driver, adList[0].ID)
+holiday_description = " - Jestem na urlopie w związku z czym cena podniesiona o 50zł za fatyge i dodatkowe koszty związane z wysyłką. Pozdrawiam"
+price_increase = 50
 
-get_offer_description(driver, adList[0])
-
-append_to_offer_description(driver, adList[0], " - Jestem na urlopie w związku z czym cena podniesiona o 50zł za fatyge i dodatkowe koszty związane z wysyłką. Pozdrawiam")
-
-change_offer_price(driver, adList[0], int(adList[0].price) + 50)
-
-click_element_by_test_id(driver, 'submit-btn')
-
-time.sleep(3)
-
+for offer in adList:
+    navigate_to_offer_edit(driver, offer.ID)
+    if validate_is_holiday_description(driver, offer, holiday_description):
+        remove_holiday_description(driver, offer, holiday_description)
+        revert_offer_price(driver, offer, int(offer.price) - price_increase)
+    else:
+        append_to_offer_description(driver, offer, holiday_description)
+        change_offer_price(driver, offer, int(offer.price) + price_increase)
+    click_element_by_test_id(driver, 'submit-btn')
+    time.sleep(3)
 
 # Close the browser
 driver.quit()
