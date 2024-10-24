@@ -10,6 +10,8 @@ import pickle
 import time
 import adModel
 import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
+from playwright.sync_api import sync_playwright
 
 # Set the path to your Chrome driver executable
 driver_path = "C:\\webdrivers\\chromedriver-win64\\chromedriver.exe"
@@ -55,17 +57,24 @@ holiday_description = " - Jestem na urlopie w związku z czym cena podniesiona o
 price_increase = 50
 
 def process_offer(offer):
-    navigate_to_offer_edit(driver, offer.ID)
-    if validate_is_holiday_description(driver, offer, holiday_description):
-        remove_holiday_description(driver, offer, holiday_description)
-        revert_offer_price(driver, offer, int(offer.price) - price_increase)
-    else:
-        append_to_offer_description(driver, offer, holiday_description)
-        change_offer_price(driver, offer, int(offer.price) + price_increase)
-    click_element_by_test_id(driver, 'submit-btn')
-    time.sleep(3)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        page.goto(f"https://www.olx.pl/d/adding/edit/{offer.ID}/?bs=olx_pro_listing")
+        
+        if validate_is_holiday_description(page, offer, holiday_description):
+            remove_holiday_description(page, offer, holiday_description)
+            revert_offer_price(page, offer, int(offer.price) - price_increase)
+        else:
+            append_to_offer_description(page, offer, holiday_description)
+            change_offer_price(page, offer, int(offer.price) + price_increase)
+        
+        page.click('[data-testid="submit-btn"]')
+        time.sleep(3)
+        browser.close()
 
-with concurrent.futures.ThreadPoolExecutor() as executor:
+with ThreadPoolExecutor() as executor:
     futures = [executor.submit(process_offer, offer) for offer in adList]
     for future in concurrent.futures.as_completed(futures):
         future.result()
