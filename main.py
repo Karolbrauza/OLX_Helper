@@ -1,4 +1,3 @@
-#%%
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -10,6 +9,7 @@ import config
 import pickle
 import time
 import adModel
+import concurrent.futures
 
 # Set the path to your Chrome driver executable
 driver_path = "C:\\webdrivers\\chromedriver-win64\\chromedriver.exe"
@@ -27,7 +27,7 @@ driver = webdriver.Chrome(service=sService, options=chrome_options)
 
 # Navigate to the olx.pl page
 driver.get("https://www.olx.pl/d/mojolx/")
-#%%
+
 # Find the login button and click it
 # click_element_by_xpath(driver, '//*[@id="onetrust-accept-btn-handler"]')
 # click_element_by_link_text(driver, 'Twoje konto')
@@ -54,7 +54,7 @@ adList = get_marketplace_offer_list(driver)
 holiday_description = " - Jestem na urlopie w związku z czym cena podniesiona o 50zł za fatyge i dodatkowe koszty związane z wysyłką. Pozdrawiam"
 price_increase = 50
 
-for offer in adList:
+def process_offer(offer):
     navigate_to_offer_edit(driver, offer.ID)
     if validate_is_holiday_description(driver, offer, holiday_description):
         remove_holiday_description(driver, offer, holiday_description)
@@ -64,6 +64,13 @@ for offer in adList:
         change_offer_price(driver, offer, int(offer.price) + price_increase)
     click_element_by_test_id(driver, 'submit-btn')
     time.sleep(3)
+
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    futures = [executor.submit(process_offer, offer) for offer in adList]
+    for future in concurrent.futures.as_completed(futures):
+        future.result()
+
+executor.shutdown(wait=True)
 
 # Close the browser
 driver.quit()

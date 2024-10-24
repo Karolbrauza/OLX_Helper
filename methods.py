@@ -6,6 +6,9 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from adModel import MarketplaceOffer
+import threading
+
+lock = threading.Lock()
 
 def wait_for_element(driver, by, value, timeout=10):
     try:
@@ -103,68 +106,75 @@ def get_marketplace_offer_list(driver):
     return offers
 
 def navigate_to_offer_edit(driver, offer_id):
-    edit_url = f"https://www.olx.pl/d/adding/edit/{offer_id}/?bs=olx_pro_listing"
-    driver.get(edit_url)
+    with lock:
+        edit_url = f"https://www.olx.pl/d/adding/edit/{offer_id}/?bs=olx_pro_listing"
+        driver.get(edit_url)
 
 def get_offer_description(driver, offer):
-    try:
-        wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
-        description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
-        offer.description = description_element.text
-        return offer.description
-    except NoSuchElementException:
-        print("Description element not found.")
+    with lock:
+        try:
+            wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
+            description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
+            offer.description = description_element.text
+            return offer.description
+        except NoSuchElementException:
+            print("Description element not found.")
 
 def validate_is_holiday_description(driver, offer, holiday_description):
-    current_description = get_offer_description(driver, offer)
-    
-    if holiday_description in current_description:
-        return True
-    else:
-        return False
+    with lock:
+        current_description = get_offer_description(driver, offer)
+        
+        if holiday_description in current_description:
+            return True
+        else:
+            return False
 
 def append_to_offer_description(driver, offer, additional_text):
-    try:
-        wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
-        description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
-        current_description = description_element.text
-        new_description = current_description + " " + additional_text
-        description_element.clear()
-        description_element.send_keys(new_description)
-        offer.description = new_description
-    except NoSuchElementException:
-        print("Description element not found.")
+    with lock:
+        try:
+            wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
+            description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
+            current_description = description_element.text
+            new_description = current_description + " " + additional_text
+            description_element.clear()
+            description_element.send_keys(new_description)
+            offer.description = new_description
+        except NoSuchElementException:
+            print("Description element not found.")
 
 def change_offer_price(driver, offer, new_price):
-    try:
-        wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-price"]')
-        price_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-price"]')
-        price_element.send_keys(Keys.CONTROL + "a")
-        price_element.send_keys(Keys.DELETE)
-        price_element.send_keys(new_price)
-        offer.price = new_price
-    except NoSuchElementException:
-        print("Price element not found.")
+    with lock:
+        try:
+            wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-price"]')
+            price_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-price"]')
+            price_element.send_keys(Keys.CONTROL + "a")
+            price_element.send_keys(Keys.DELETE)
+            price_element.send_keys(new_price)
+            offer.price = new_price
+        except NoSuchElementException:
+            print("Price element not found.")
 
 def remove_holiday_description(driver, offer, holiday_description):
-    try:
-        wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
-        description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
-        current_description = description_element.text
-        new_description = current_description.replace(holiday_description, "").strip()
-        description_element.clear()
-        description_element.send_keys(new_description)
-        offer.description = new_description
-    except NoSuchElementException:
-        print("Description element not found.")
+    with lock:
+        try:
+            wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
+            description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
+            current_description = description_element.text
+            new_description = current_description.replace(holiday_description, "").strip()
+            description_element.clear()
+            description_element.send_keys(new_description)
+            offer.description = new_description
+        except NoSuchElementException:
+            print("Description element not found.")
 
 def revert_offer_price(driver, offer, original_price):
-    try:
-        wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-price"]')
-        price_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-price"]')
-        price_element.send_keys(Keys.CONTROL + "a")
-        price_element.send_keys(Keys.DELETE)
-        price_element.send_keys(original_price)
-        offer.price = original_price
-    except NoSuchElementException:
-        print("Price element not found.")
+    with lock:
+        try:
+            wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-price"]')
+            price_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-price"]')
+            price_element.send_keys(Keys.CONTROL + "a")
+            price_element.send_keys(Keys.DELETE)
+            price_element.send_keys(original_price)
+            offer.price = original_price
+        except NoSuchElementException:
+            print("Price element not found.")
