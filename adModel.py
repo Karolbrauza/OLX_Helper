@@ -4,3 +4,11 @@ class MarketplaceOffer:
         self.name = name
         self.price = price
         self.description = description
+        
+    def to_dict(self):
+        return {
+            'ID': self.ID,
+            'Name': self.name,
+            'Price': self.price,
+            'Description': self.description
+        }

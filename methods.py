@@ -10,8 +10,6 @@ import threading
 import logging
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-lock = threading.Lock()
-
 def wait_for_element(driver, by, value, timeout=10):
     try:
         element_present = EC.presence_of_element_located((by, value))
@@ -82,10 +80,12 @@ def get_ad_list(driver):
         logging.error(f"Elements with data-testid ad-row not found.")
         return []
 
-def get_marketplace_offer_list(driver):
+def get_marketplace_offer_list(driver, max_offers=3):
     ad_elements = get_ad_list(driver)
     offers = []
     for ad_element in ad_elements:
+        if max_offers is not None and len(offers) >= max_offers:
+            break
         try:
             ad_id_element = ad_element.find_element(By.CSS_SELECTOR, '[data-cy="ad-id"]')
             ad_id_text = ad_id_element.text
@@ -104,14 +104,12 @@ def get_marketplace_offer_list(driver):
             logging.error("Ad ID, name, or price element not found in one of the ad elements.")
     return offers
 
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+# @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def navigate_to_offer_edit(driver, offer_id):
-    with lock:
         edit_url = f"https://www.olx.pl/d/adding/edit/{offer_id}/?bs=olx_pro_listing"
         driver.get(edit_url)
 
 def get_offer_description(driver, offer):
-    with lock:
         try:
             wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
             description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
@@ -121,7 +119,6 @@ def get_offer_description(driver, offer):
             logging.error("Description element not found.")
 
 def validate_is_holiday_description(driver, offer, holiday_description):
-    with lock:
         current_description = get_offer_description(driver, offer)
         
         if holiday_description in current_description:
@@ -130,7 +127,6 @@ def validate_is_holiday_description(driver, offer, holiday_description):
             return False
 
 def append_to_offer_description(driver, offer, additional_text):
-    with lock:
         try:
             wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
             description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
@@ -143,7 +139,6 @@ def append_to_offer_description(driver, offer, additional_text):
             logging.error("Description element not found.")
 
 def change_offer_price(driver, offer, new_price):
-    with lock:
         try:
             wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-price"]')
             price_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-price"]')
@@ -155,7 +150,6 @@ def change_offer_price(driver, offer, new_price):
             logging.error("Price element not found.")
 
 def remove_holiday_description(driver, offer, holiday_description):
-    with lock:
         try:
             wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-description"]')
             description_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-description"]')
@@ -168,7 +162,6 @@ def remove_holiday_description(driver, offer, holiday_description):
             logging.error("Description element not found.")
 
 def revert_offer_price(driver, offer, original_price):
-    with lock:
         try:
             wait_for_element(driver, By.CSS_SELECTOR, '[data-cy="posting-price"]')
             price_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="posting-price"]')
