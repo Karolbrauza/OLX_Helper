@@ -11,7 +11,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from methods import *
 import config
-import pickle
 import time
 import adModel
 import concurrent.futures
@@ -42,15 +41,15 @@ def edit_offer(offer):
     try:
         navigate_to_offer_edit(driver, offer.ID)
         
-        # if validate_is_holiday_description(driver, offer, holiday_description):
-        #     remove_holiday_description(driver, offer, holiday_description)
-        #     revert_offer_price(driver, offer, int(offer.price) - price_increase)
-        # else:
-        #     append_to_offer_description(driver, offer, holiday_description)
-        #     change_offer_price(driver, offer, int(offer.price) + price_increase)
+        if validate_is_holiday_description(driver, offer, config.holiday_description):
+            remove_holiday_description(driver, offer, config.holiday_description)
+            revert_offer_price(driver, offer, int(offer.price) - config.price_increase)
+        else:
+            append_to_offer_description(driver, offer, config.holiday_description)
+            change_offer_price(driver, offer, int(offer.price) + config.price_increase)
         
-        # click_element_by_test_id(driver, "submit-btn")
-        # time.sleep(3)
+        click_element_by_test_id(driver, "submit-btn")
+        time.sleep(3)
     except Exception as e:
         logging.error(f"Error editing offer {offer.ID}: {e}")
     finally:
@@ -109,9 +108,6 @@ else:
     logging.info("CSV file not found, performing login and scraping ads")
     adList = login_and_scrape_ads()
 # Example adList
-
-holiday_description = " - Jestem na urlopie w związku z czym cena podniesiona o 50zł za fatyge i dodatkowe koszty związane z wysyłką. Pozdrawiam"
-price_increase = 50
 
 with ThreadPoolExecutor(max_workers=3) as executor:
     futures = list(executor.map(edit_offer, adList))
