@@ -1,12 +1,9 @@
-from operator import contains
-import re
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from adModel import MarketplaceOffer
-import threading
 import logging
 from tenacity import retry, stop_after_attempt, wait_fixed
 

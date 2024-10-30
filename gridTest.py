@@ -1,5 +1,4 @@
 import concurrent.futures
-from lib2to3.pgen2 import driver
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.options import Options

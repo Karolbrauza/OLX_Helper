@@ -60,3 +60,32 @@ To set up Selenium Grid for parallel execution, follow these steps:
 5. **Run your script**: Execute your `main.py` script as usual. The WebDriver will now use the Selenium Grid Hub to distribute the tests across the available nodes, allowing for parallel execution.
 
 By following these steps, you can set up Selenium Grid for parallel execution and improve the speed of processing multiple offers.
+
+## Configuration
+
+The `config.py` file contains configuration variables used in the project. Make sure to update the values in `config.py` according to your requirements.
+
+### Configuration Variables
+
+- `holiday_description`: The text to be added to the offer description during holidays.
+- `price_increase`: The amount by which the offer price should be increased during holidays.
+- `USERNAME`: Your OLX username for login.
+- `PASSWORD`: Your OLX password for login.
+
+### Example `config.py`
+
+```python
+holiday_description = "I'm on holiday until xx.xx.xxxx"
+price_increase = 1000
+USERNAME = "your_username"
+PASSWORD = "your_password"
+```
+
+## .gitignore
+
+Make sure to add `cookies.pkl` to your `.gitignore` file to avoid committing sensitive data.
+
+```gitignore
+# .gitignore
+cookies.pkl
+```
