@@ -16,6 +16,7 @@ import adModel
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import logging
+import tempfile
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,15 +24,24 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Set the URL of the Selenium Grid Hub
 grid_url = "http://localhost:4444"
 
-user_data_dir = "C:\\path\\to\\your\\chrome\\user\\data"
-
-
 # Set the desired capabilities for the browser
 capabilities = DesiredCapabilities.CHROME.copy()
 
+# Create 10 reusable profiles
+profile_dir = "profiles"
+if not os.path.exists(profile_dir):
+    os.makedirs(profile_dir)
+    for i in range(10):
+        os.makedirs(os.path.join(profile_dir, f"profile_{i}"))
+
+profile_index = 0
+
 def create_webdriver():
+    global profile_index
     chrome_options = Options()
-    # chrome_options.add_argument(f"user-data-dir={user_data_dir}")
+    user_data_dir = os.path.join(profile_dir, f"profile_{profile_index}")
+    chrome_options.add_argument(f"user-data-dir={user_data_dir}")
+    profile_index = (profile_index + 1) % 10
     return webdriver.Remote(command_executor=grid_url, options=chrome_options)
 
 def edit_offer(offer):
