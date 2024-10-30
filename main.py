@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Set the URL of the Selenium Grid Hub
 grid_url = "http://localhost:4444"
 
-user_data_dir = "C:\\path\\to\\your\\chrome\\user\\data"
+user_data_dir = "C:\\ChromeProfiles\\"
 
 
 # Set the desired capabilities for the browser
